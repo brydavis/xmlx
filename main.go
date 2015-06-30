@@ -102,6 +102,23 @@ func (n Node) Import() []byte {
 // 	}
 // }
 
+func (n Node) Write(name string, perm os.FileMode) {
+	j := n.Import()
+	ioutil.WriteFile(name, j, perm)
+}
+
+
+func (n Node) Querify() {
+	for k, v := range n.Nodes {
+		if len(v.Nodes) < 1 {
+			fmt.Printf("%s(%d) %s == content node (%s)\n", tabs, k, strings.Title(strings.ToLower(v.XMLName.Local)), string(v.Content))
+		} else {
+			fmt.Printf("%s(%d) %s == parent node\n", tabs, k, strings.Title(strings.ToLower(v.XMLName.Local)))
+			v.Pretty(indent + 1)
+		}
+	}
+}
+
 func Pretty(name string) (string, error) {
 	b, err := ioutil.ReadFile(name)
 	if err != nil {
@@ -119,9 +136,4 @@ func Pretty(name string) (string, error) {
 	}
 
 	return string(b), nil
-}
-
-func (n Node) Write(name string, perm os.FileMode) {
-	j := n.Import()
-	ioutil.WriteFile(name, j, perm)
 }
