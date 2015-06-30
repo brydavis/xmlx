@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"encoding/xml"
-	"fmt"
 	"io/ioutil"
 )
 
@@ -15,9 +14,12 @@ type Node struct {
 }
 
 func main() {
-	filename := "simple.xml"
+	// filename := "simple.xml"
+	filename := "hmis.xml"
+
 	b, _ := ioutil.ReadFile(filename)
-	ImportXML(b)
+	j := ImportXML(b)
+	ioutil.WriteFile("hmis.json", j, 0700)
 }
 
 // func Walk(n Node, indent int) interface{} {
@@ -51,7 +53,7 @@ func main() {
 // 	return vex
 
 func Walk(n Node, indent int) interface{} {
-	m := make(map[string]interface{})
+	// m := make(map[string]interface{})
 
 	var tabs string
 	for i := 0; i < indent; i++ {
@@ -59,15 +61,18 @@ func Walk(n Node, indent int) interface{} {
 	}
 
 	if len(n.Nodes) < 1 {
-		m[n.XMLName.Local] = string(n.Content)
+		// m[n.XMLName.Local] = string(n.Content)
+		return string(n.Content)
 	} else {
 		// m[n.XMLName.Local] = make([]interface{}, len(n.Nodes))
 		// m[n.XMLName.Local] = make(map[int]interface{})
 
-		var x []interface{}
+		// var x []interface{}
+		x := make(map[string]interface{})
 
 		for _, v := range n.Nodes {
-			x = append(x, Walk(v, indent+1))
+			// x = append(x, Walk(v, indent+1))
+			x[v.XMLName.Local] = Walk(v, indent+1)
 
 			// if len(v.Nodes) < 1 {
 			// 	fmt.Printf("%s(%d) %s == content node (%s)\n", tabs, k, strings.Title(strings.ToLower(v.XMLName.Local)), string(v.Content))
@@ -81,7 +86,8 @@ func Walk(n Node, indent int) interface{} {
 			// }
 		}
 
-		m[n.XMLName.Local] = x
+		// m[n.XMLName.Local] = x
+		return x
 	}
 
 	// for k, v := range n.Nodes {
@@ -94,19 +100,25 @@ func Walk(n Node, indent int) interface{} {
 	// 	}
 	// }
 
-	return m
+	// return m
 }
 
-func ImportXML(data []byte) {
+func ImportXML(data []byte) []byte {
 	buf := bytes.NewBuffer(data)
 	dec := xml.NewDecoder(buf)
 
 	var n Node
 	dec.Decode(&n)
 
-	// fmt.Println(Walk(n, 0))
+	var y []interface{}
+	for _, v := range n.Nodes {
+		y = append(y, Walk(v, 0))
 
-	m := Walk(n, 0)
-	b, _ := json.Marshal(m)
-	fmt.Println(string(b))
+	}
+
+	// m := Walk(n, 0)
+	b, _ := json.Marshal(y)
+	// fmt.Println(string(b))
+	return b
+
 }
