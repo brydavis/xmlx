@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"io/ioutil"
+	"strconv"
 )
 
 type Node struct {
@@ -22,38 +23,7 @@ func main() {
 	ioutil.WriteFile("json/simple.json", j, 0700)
 }
 
-// func Walk(n Node, indent int) interface{} {
-// 	var tabs string
-// 	for i := 0; i < indent; i++ {
-// 		tabs += "\t"
-// 	}
-
-// 	vex := make(map[string]interface{})
-
-// 	for key, val := range n.Nodes {
-// 		if len(val.Nodes) < 1 {
-// 			fmt.Printf("%s(%d) %s == content node (%s)\n", tabs, key, strings.Title(strings.ToLower(val.XMLName.Local)), string(val.Content))
-// 			vex[val.XMLName.Local] = string(val.Content)
-// 		} else {
-// 			fmt.Printf("%s(%d) %s == parent node\n", tabs, key, strings.Title(strings.ToLower(val.XMLName.Local)))
-// 			// y := Walk(val, indent+1)
-// 			// fmt.Println(val.XMLName.Local, y, "\n")
-
-// 			// var x []interface{}
-// 			// for k, _ := range val.Nodes {
-// 			// 	vex[val.XMLName.Local] = append(x, Walk(vval, indent+1))
-// 			// y := Walk(val.Nodes[k], indent+1)
-// 			// fmt.Println(val.XMLName.Local, y, "\n")
-// 			// }
-// 			// vex[val.XMLName.Local] = x
-
-// 		}
-// 	}
-
-// 	return vex
-
 func Walk(n Node, indent int) interface{} {
-	// m := make(map[string]interface{})
 
 	var tabs string
 	for i := 0; i < indent; i++ {
@@ -69,6 +39,7 @@ func Walk(n Node, indent int) interface{} {
 
 		// var x []interface{}
 		x := make(map[string][]interface{})
+		y := make(map[string]interface{})
 
 		for _, v := range n.Nodes {
 			// x = append(x, Walk(v, indent+1))
@@ -87,8 +58,28 @@ func Walk(n Node, indent int) interface{} {
 			// }
 		}
 
-		// m[n.XMLName.Local] = x
-		return x
+		for k, v := range x {
+			if len(x[k]) == 1 {
+				switch v[0].(type) {
+				case int, int32, int64:
+					i, _ := strconv.Atoi(v[0].(string))
+					y[k] = i //v[0].(int)
+				case float32, float64:
+					f, _ := strconv.ParseFloat(v[0].(string), 64)
+
+					y[k] = f // v[0].(float64)
+				case bool:
+					y[k] = v[0].(bool)
+				default:
+					y[k] = v[0]
+				}
+
+			} else {
+				y[k] = v
+			}
+		}
+
+		return y
 	}
 
 	// for k, v := range n.Nodes {
