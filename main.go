@@ -8,7 +8,7 @@ import (
 	"io/ioutil"
 	"os"
 	"strconv"
-	"strings"
+	// "strings"
 )
 
 /* TODO
@@ -28,7 +28,11 @@ type Node struct {
 func main() {
 	n := Nodify("xml/complex.xml")
 	n.Write("json/complex.json", 0700)
-	n.Pretty(0)
+	// n.Pretty(0)
+
+	j, _ := Pretty("json/complex.json")
+	fmt.Printf("%s\n", j)
+
 }
 
 func Nodify(filename string) Node {
@@ -82,20 +86,39 @@ func (n Node) Import() []byte {
 	return b
 }
 
-func (n Node) Pretty(indent int) {
-	var tabs string
-	for i := 0; i < indent; i++ {
-		tabs += "\t"
+// func (n Node) Pretty(indent int) {
+// 	var tabs string
+// 	for i := 0; i < indent; i++ {
+// 		tabs += "\t"
+// 	}
+
+// 	for k, v := range n.Nodes {
+// 		if len(v.Nodes) < 1 {
+// 			fmt.Printf("%s(%d) %s == content node (%s)\n", tabs, k, strings.Title(strings.ToLower(v.XMLName.Local)), string(v.Content))
+// 		} else {
+// 			fmt.Printf("%s(%d) %s == parent node\n", tabs, k, strings.Title(strings.ToLower(v.XMLName.Local)))
+// 			v.Pretty(indent + 1)
+// 		}
+// 	}
+// }
+
+func Pretty(name string) (string, error) {
+	b, err := ioutil.ReadFile(name)
+	if err != nil {
+		return "", err
 	}
 
-	for k, v := range n.Nodes {
-		if len(v.Nodes) < 1 {
-			fmt.Printf("%s(%d) %s == content node (%s)\n", tabs, k, strings.Title(strings.ToLower(v.XMLName.Local)), string(v.Content))
-		} else {
-			fmt.Printf("%s(%d) %s == parent node\n", tabs, k, strings.Title(strings.ToLower(v.XMLName.Local)))
-			v.Pretty(indent + 1)
-		}
+	var data interface{}
+
+	if err := json.Unmarshal(b, &data); err != nil {
+		return "", err
 	}
+	b, err = json.MarshalIndent(data, "", "  ")
+	if err != nil {
+		return "", err
+	}
+
+	return string(b), nil
 }
 
 func (n Node) Write(name string, perm os.FileMode) {
