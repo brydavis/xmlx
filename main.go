@@ -11,10 +11,18 @@ import (
 	"strings"
 )
 
+/* TODO
+- Transform xml "Attr" to nested elements
+- Generalize API for other formats
+- Transform data to actual data types
+- Integrate into "xql" package
+*/
+
 type Node struct {
 	XMLName xml.Name
 	Content []byte `xml:",innerxml"`
 	Nodes   []Node `xml:",any"`
+	// Attr    xml.Attr
 }
 
 func main() {
@@ -23,7 +31,18 @@ func main() {
 	n.Pretty(0)
 }
 
-func Walk(n Node) interface{} {
+func Nodify(filename string) Node {
+	data, _ := ioutil.ReadFile(filename)
+	buf := bytes.NewBuffer(data)
+	dec := xml.NewDecoder(buf)
+
+	var n Node
+	dec.Decode(&n)
+
+	return n
+}
+
+func (n Node) Walk() interface{} {
 	if len(n.Nodes) < 1 {
 		return string(n.Content)
 	} else {
@@ -31,7 +50,7 @@ func Walk(n Node) interface{} {
 		y := make(map[string]interface{})
 
 		for _, v := range n.Nodes {
-			x[v.XMLName.Local] = append(x[v.XMLName.Local], Walk(v))
+			x[v.XMLName.Local] = append(x[v.XMLName.Local], v.Walk())
 		}
 
 		for k, v := range x {
@@ -53,21 +72,10 @@ func Walk(n Node) interface{} {
 	}
 }
 
-func Nodify(filename string) Node {
-	data, _ := ioutil.ReadFile(filename)
-	buf := bytes.NewBuffer(data)
-	dec := xml.NewDecoder(buf)
-
-	var n Node
-	dec.Decode(&n)
-
-	return n
-}
-
 func (n Node) Import() []byte {
 	var y []interface{}
 	for _, v := range n.Nodes {
-		y = append(y, Walk(v))
+		y = append(y, v.Walk())
 	}
 
 	b, _ := json.Marshal(y)
